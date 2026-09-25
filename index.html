@@ -3,9 +3,18 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="theme-color" content="#0b0d10">
+  <meta name="theme-color" content="#0b0d10" id="themeColor">
   <title>Nelya — V0.1.1</title>
-  <link rel="stylesheet" href="./assets/css/style.css">
+  <link id="themeStylesheet" rel="stylesheet" href="./assets/css/style-dark.css">
+  <script>
+    (() => {
+      const savedTheme = localStorage.getItem("nelya_theme");
+      if (savedTheme === "light") {
+        document.getElementById("themeStylesheet").href = "./assets/css/style-light.css";
+        document.getElementById("themeColor").content = "#f5f6f8";
+      }
+    })();
+  </script>
 </head>
 <body>
   <div class="app-shell">
@@ -42,18 +51,25 @@
 
     <main class="chat-layout">
       <header class="topbar">
-        <div>
+        <div class="topbar-title">
           <h1>Nelya</h1>
           <p>Prototype conversationnel — V0.1.1</p>
         </div>
-        <button id="exportBtn" class="ghost-button">Exporter les données</button>
+
+        <div class="topbar-actions">
+          <div class="theme-switch" role="group" aria-label="Choisir le thème">
+            <button class="theme-option" type="button" data-theme="dark">Sombre</button>
+            <button class="theme-option" type="button" data-theme="light">Clair</button>
+          </div>
+          <button id="exportBtn" class="ghost-button">Exporter les données</button>
+        </div>
       </header>
 
       <section id="chat" class="chat">
         <div id="welcome" class="welcome">
           <div class="welcome-logo">N</div>
           <h2>Parler avec Nelya</h2>
-          <p>Chaque réponse peut être validée ou corrigée pour préparer les futures données d’entraînement.</p>
+          <p>Discute avec Nelya, valide ses bonnes réponses ou corrige-les pour préparer ses futures données d’entraînement.</p>
         </div>
       </section>
 
