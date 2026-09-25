@@ -11,15 +11,41 @@ const validatedCount = document.getElementById("validatedCount");
 const connectionDot = document.getElementById("connectionDot");
 const connectionText = document.getElementById("connectionText");
 const messageTemplate = document.getElementById("messageTemplate");
+const themeStylesheet = document.getElementById("themeStylesheet");
+const themeColor = document.getElementById("themeColor");
+const themeOptions = document.querySelectorAll(".theme-option");
 
 const STORAGE_KEYS = {
   history: "nelya_history_v011",
-  feedback: "nelya_feedback_v011"
+  feedback: "nelya_feedback_v011",
+  theme: "nelya_theme"
 };
 
 let history = readJSON(STORAGE_KEYS.history, []);
 let feedback = readJSON(STORAGE_KEYS.feedback, []);
 let sending = false;
+
+function getTheme() {
+  return localStorage.getItem(STORAGE_KEYS.theme) === "light" ? "light" : "dark";
+}
+
+function applyTheme(theme) {
+  const selectedTheme = theme === "light" ? "light" : "dark";
+
+  themeStylesheet.href =
+    "./assets/css/style-" + selectedTheme + ".css";
+
+  themeColor.content =
+    selectedTheme === "light" ? "#f5f6f8" : "#0a0c0f";
+
+  localStorage.setItem(STORAGE_KEYS.theme, selectedTheme);
+
+  themeOptions.forEach(button => {
+    const active = button.dataset.theme === selectedTheme;
+    button.classList.toggle("active", active);
+    button.setAttribute("aria-pressed", active ? "true" : "false");
+  });
+}
 
 function readJSON(key, fallback) {
   try {
@@ -318,6 +344,14 @@ newChatBtn.addEventListener("click", () => {
 });
 
 exportBtn.addEventListener("click", exportData);
+
+themeOptions.forEach(button => {
+  button.addEventListener("click", () => {
+    applyTheme(button.dataset.theme);
+  });
+});
+
+applyTheme(getTheme());
 
 updateStats();
 renderAll();
