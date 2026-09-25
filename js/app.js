@@ -180,7 +180,7 @@ function createMessage(item, index) {
   const isUser = item.role === "user";
 
   avatar.textContent = isUser ? "T" : "N";
-  meta.textContent = isUser ? "Toi" : "Nelya";
+  meta.textContent = isUser ? "Toi" : config.NAME;
   text.textContent = item.content;
 
   if (!isUser) {
@@ -211,6 +211,7 @@ function validateAnswer(index) {
     id: crypto.randomUUID(),
     createdAt: new Date().toISOString(),
     version: config.VERSION,
+    model: config.MODEL_ID,
     input: userMessage.content,
     output: assistantMessage.content,
     source: "validated"
@@ -309,12 +310,12 @@ async function sendMessage(message) {
 
     setConnectionState(
       config.API_URL ? "online" : "",
-      config.API_URL ? "Nelya connectée" : "Mode local"
+      config.API_URL ? config.NAME + " connectée" : "Mode local"
     );
   } catch (error) {
     history.push({
       role: "assistant",
-      content: "Je n'arrive pas à contacter Nelya pour le moment.",
+      content: "Je n\'arrive pas à contacter " + config.NAME + " pour le moment.",
       createdAt: new Date().toISOString()
     });
 
@@ -340,6 +341,7 @@ async function askApi(message) {
     body: JSON.stringify({
       message,
       history: history.slice(-20),
+      model: config.MODEL_ID,
       version: config.VERSION
     })
   });
@@ -377,10 +379,10 @@ async function localDemoReply(message) {
   await new Promise(resolve => setTimeout(resolve, 250));
 
   if (/^(salut|bonjour|hello|yo)\b/i.test(message)) {
-    return "Salut. Je suis Nelya V0.1.1.";
+    return "Salut. Je suis " + config.NAME + " V" + config.VERSION + ".";
   }
 
-  return "Le modèle Nelya n'est pas encore branché à cette réponse.";
+  return "Le modèle " + config.NAME + " n\'est pas encore branché à cette réponse.";
 }
 
 async function checkApiHealth() {
@@ -397,9 +399,9 @@ async function checkApiHealth() {
 
     if (!response.ok) throw new Error("health " + response.status);
 
-    setConnectionState("online", "Nelya connectée");
+    setConnectionState("online", config.NAME + " connectée");
   } catch {
-    setConnectionState("error", "Nelya hors ligne");
+    setConnectionState("error", config.NAME + " hors ligne");
   }
 }
 
@@ -407,6 +409,7 @@ function exportData() {
   const payload = {
     exportedAt: new Date().toISOString(),
     version: config.VERSION,
+    model: config.MODEL_ID,
     conversations,
     feedback
   };
