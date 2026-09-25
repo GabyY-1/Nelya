@@ -3,65 +3,77 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="theme-color" content="#0b0d10" id="themeColor">
+  <meta name="theme-color" content="#0a0c0f" id="themeColor">
   <title>Nelya — V0.1.1</title>
-  <link id="themeStylesheet" rel="stylesheet" href="./assets/css/style-dark.css">
+
+  <link id="darkTheme" rel="stylesheet" href="./assets/css/style-dark.css">
+  <link id="lightTheme" rel="stylesheet" href="./assets/css/style-light.css" disabled>
+
   <script>
     (() => {
-      const savedTheme = localStorage.getItem("nelya_theme");
-      if (savedTheme === "light") {
-        document.getElementById("themeStylesheet").href = "./assets/css/style-light.css";
-        document.getElementById("themeColor").content = "#f5f6f8";
-      }
+      const theme = localStorage.getItem("nelya_theme") === "light" ? "light" : "dark";
+      const dark = document.getElementById("darkTheme");
+      const light = document.getElementById("lightTheme");
+      dark.disabled = theme !== "dark";
+      light.disabled = theme !== "light";
+      document.getElementById("themeColor").content = theme === "light" ? "#f5f6f8" : "#0a0c0f";
     })();
   </script>
 </head>
+
 <body>
   <div class="app-shell">
     <aside class="sidebar">
-      <div class="brand">
-        <div class="brand-mark">N</div>
-        <div>
-          <strong>Nelya</strong>
-          <span>V0.1.1</span>
-        </div>
+      <div class="sidebar-header">
+        <h1>Chat</h1>
+        <button id="newChatBtn" class="new-chat-button" type="button" aria-label="Nouveau chat" title="Nouveau chat">+</button>
       </div>
 
-      <button id="newChatBtn" class="sidebar-button">Nouvelle conversation</button>
+      <nav id="conversationList" class="conversation-list" aria-label="Conversations"></nav>
 
-      <div class="sidebar-section">
-        <p class="sidebar-title">Entraînement</p>
-        <div class="stat-card">
-          <div>
-            <span>Données validées</span>
-            <strong id="validatedCount">0</strong>
+      <div class="sidebar-bottom">
+        <div id="settingsPanel" class="settings-panel" hidden>
+          <div class="settings-title">Paramètres</div>
+
+          <div class="settings-row">
+            <span>Apparence</span>
+            <div class="theme-switch" role="group" aria-label="Choisir le thème">
+              <button class="theme-option" type="button" data-theme="dark">Sombre</button>
+              <button class="theme-option" type="button" data-theme="light">Clair</button>
+            </div>
           </div>
-          <div>
-            <span>Objectif initial</span>
-            <strong>500 000</strong>
+
+          <div class="settings-row settings-stack">
+            <span>Entraînement</span>
+            <div class="training-stats">
+              <span>Données validées</span>
+              <strong id="validatedCount">0</strong>
+            </div>
           </div>
+
+          <button id="exportBtn" class="settings-action" type="button">Exporter les données</button>
+
+          <div class="settings-status">
+            <span id="connectionDot" class="status-dot"></span>
+            <span id="connectionText">Vérification de Nelya…</span>
+          </div>
+
+          <div class="settings-version">Nelya V0.1.1</div>
         </div>
-      </div>
 
-      <div class="sidebar-footer">
-        <span id="connectionDot" class="status-dot"></span>
-        <span id="connectionText">Mode local</span>
+        <button id="settingsBtn" class="settings-button" type="button" aria-expanded="false">
+          <span class="settings-logo">N</span>
+          <span class="settings-label">Paramètres</span>
+          <span class="settings-more">•••</span>
+        </button>
       </div>
     </aside>
 
     <main class="chat-layout">
       <header class="topbar">
-        <div class="topbar-title">
-          <h1>Nelya</h1>
-          <p>Prototype conversationnel — V0.1.1</p>
-        </div>
-
-        <div class="topbar-actions">
-          <div class="theme-switch" role="group" aria-label="Choisir le thème">
-            <button class="theme-option" type="button" data-theme="dark">Sombre</button>
-            <button class="theme-option" type="button" data-theme="light">Clair</button>
-          </div>
-          <button id="exportBtn" class="ghost-button">Exporter les données</button>
+        <div>
+          <strong>Nelya</strong>
+          <span>V0.1.1</span>
         </div>
       </header>
 
@@ -69,7 +81,7 @@
         <div id="welcome" class="welcome">
           <div class="welcome-logo">N</div>
           <h2>Parler avec Nelya</h2>
-          <p>Discute avec Nelya, valide ses bonnes réponses ou corrige-les pour préparer ses futures données d’entraînement.</p>
+          <p>Discute avec Nelya puis valide ou corrige ses réponses pour l’aider à progresser.</p>
         </div>
       </section>
 
