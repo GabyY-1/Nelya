@@ -7,6 +7,7 @@ const messageInput = document.getElementById("messageInput");
 const sendBtn = document.getElementById("sendBtn");
 const newChatBtn = document.getElementById("newChatBtn");
 const conversationList = document.getElementById("conversationList");
+const chatSearch = document.getElementById("chatSearch");
 const exportBtn = document.getElementById("exportBtn");
 const validatedCount = document.getElementById("validatedCount");
 const connectionDot = document.getElementById("connectionDot");
@@ -30,6 +31,10 @@ const STORAGE_KEYS = {
 let feedback = readJSON(STORAGE_KEYS.feedback, []);
 let conversations = readJSON(STORAGE_KEYS.conversations, []);
 let sending = false;
+let chatSearchQuery = "";
+let openConversationMenuId = null;
+let renamingConversationId = null;
+let pendingDeleteConversationId = null;
 
 function readJSON(key, fallback) {
   try {
@@ -118,36 +123,226 @@ function makeConversationTitle(message) {
   return cleaned.length > 34 ? cleaned.slice(0, 34) + "…" : cleaned;
 }
 
+function getConversationGroup(dateString) {
+  const date = new Date(dateString);
+  const now = new Date();
+
+  const startToday = new Date(
+    now.getFullYear(),
+    now.getMonth(),
+    now.getDate()
+  );
+
+  const startWeek = new Date(startToday);
+  startWeek.setDate(startWeek.getDate() - 7);
+
+  if (date >= startToday) return "Aujourd’hui";
+  if (date >= startWeek) return "7 derniers jours";
+  return "Plus anciens";
+}
+
+function selectConversation(id) {
+  if (sending) return;
+
+  activeConversationId = id;
+  openConversationMenuId = null;
+  renamingConversationId = null;
+  pendingDeleteConversationId = null;
+
+  saveConversations();
+  renderAll();
+  messageInput.focus();
+}
+
+function deleteConversation(id) {
+  conversations = conversations.filter(conversation => conversation.id !== id);
+
+  if (conversations.length === 0) {
+    const fresh = createConversation();
+    conversations = [fresh];
+    activeConversationId = fresh.id;
+  } else if (activeConversationId === id) {
+    const sorted = [...conversations].sort(
+      (a, b) => new Date(b.updatedAt) - new Date(a.updatedAt)
+    );
+    activeConversationId = sorted[0].id;
+  }
+
+  openConversationMenuId = null;
+  renamingConversationId = null;
+  pendingDeleteConversationId = null;
+
+  saveConversations();
+  renderAll();
+}
+
+function finishRename(id, value) {
+  const conversation = conversations.find(item => item.id === id);
+  if (!conversation) return;
+
+  const title = value.replace(/\s+/g, " ").trim();
+
+  if (title) {
+    conversation.title = title.slice(0, 60);
+    conversation.updatedAt = new Date().toISOString();
+  }
+
+  renamingConversationId = null;
+  saveConversations();
+  renderConversationList();
+}
+
 function renderConversationList() {
   conversationList.innerHTML = "";
 
-  const sorted = [...conversations].sort((a, b) =>
-    new Date(b.updatedAt) - new Date(a.updatedAt)
-  );
+  const query = chatSearchQuery.trim().toLowerCase();
+
+  const sorted = [...conversations]
+    .filter(conversation =>
+      !query ||
+      (conversation.title || "Nouveau chat").toLowerCase().includes(query)
+    )
+    .sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
+
+  if (sorted.length === 0) {
+    const empty = document.createElement("div");
+    empty.className = "conversation-empty";
+    empty.textContent = "Aucun chat trouvé";
+    conversationList.appendChild(empty);
+    return;
+  }
+
+  let currentGroup = "";
 
   sorted.forEach(conversation => {
-    const button = document.createElement("button");
-    button.type = "button";
-    button.className = "conversation-item";
+    const group = getConversationGroup(conversation.updatedAt);
+
+    if (group !== currentGroup) {
+      currentGroup = group;
+
+      const heading = document.createElement("div");
+      heading.className = "conversation-group";
+      heading.textContent = group;
+      conversationList.appendChild(heading);
+    }
+
+    const row = document.createElement("div");
+    row.className = "conversation-row";
 
     if (conversation.id === activeConversationId) {
-      button.classList.add("active");
+      row.classList.add("active");
     }
+
+    if (renamingConversationId === conversation.id) {
+      const input = document.createElement("input");
+      input.className = "conversation-rename";
+      input.value = conversation.title || "Nouveau chat";
+      input.maxLength = 60;
+
+      input.addEventListener("keydown", event => {
+        if (event.key === "Enter") {
+          event.preventDefault();
+          finishRename(conversation.id, input.value);
+        }
+
+        if (event.key === "Escape") {
+          renamingConversationId = null;
+          renderConversationList();
+        }
+      });
+
+      input.addEventListener("blur", () => {
+        if (renamingConversationId === conversation.id) {
+          finishRename(conversation.id, input.value);
+        }
+      });
+
+      row.appendChild(input);
+      conversationList.appendChild(row);
+
+      requestAnimationFrame(() => {
+        input.focus();
+        input.select();
+      });
+
+      return;
+    }
+
+    const selectButton = document.createElement("button");
+    selectButton.type = "button";
+    selectButton.className = "conversation-select";
+    selectButton.title = conversation.title || "Nouveau chat";
 
     const title = document.createElement("span");
     title.textContent = conversation.title || "Nouveau chat";
 
-    button.appendChild(title);
-    button.addEventListener("click", () => {
-      if (sending) return;
-      activeConversationId = conversation.id;
-      saveConversations();
-      renderConversationList();
-      renderAll();
-      messageInput.focus();
+    selectButton.appendChild(title);
+    selectButton.addEventListener("click", () => {
+      selectConversation(conversation.id);
     });
 
-    conversationList.appendChild(button);
+    const menuButton = document.createElement("button");
+    menuButton.type = "button";
+    menuButton.className = "conversation-menu-button";
+    menuButton.textContent = "•••";
+    menuButton.setAttribute("aria-label", "Options du chat");
+
+    menuButton.addEventListener("click", event => {
+      event.stopPropagation();
+
+      openConversationMenuId =
+        openConversationMenuId === conversation.id
+          ? null
+          : conversation.id;
+
+      pendingDeleteConversationId = null;
+      renderConversationList();
+    });
+
+    row.append(selectButton, menuButton);
+
+    if (openConversationMenuId === conversation.id) {
+      const menu = document.createElement("div");
+      menu.className = "conversation-menu";
+
+      const renameButton = document.createElement("button");
+      renameButton.type = "button";
+      renameButton.textContent = "Renommer";
+      renameButton.addEventListener("click", event => {
+        event.stopPropagation();
+        openConversationMenuId = null;
+        renamingConversationId = conversation.id;
+        renderConversationList();
+      });
+
+      const deleteButton = document.createElement("button");
+      deleteButton.type = "button";
+      deleteButton.className = "conversation-delete";
+
+      if (pendingDeleteConversationId === conversation.id) {
+        deleteButton.textContent = "Confirmer la suppression";
+        deleteButton.classList.add("confirm");
+      } else {
+        deleteButton.textContent = "Supprimer";
+      }
+
+      deleteButton.addEventListener("click", event => {
+        event.stopPropagation();
+
+        if (pendingDeleteConversationId === conversation.id) {
+          deleteConversation(conversation.id);
+          return;
+        }
+
+        pendingDeleteConversationId = conversation.id;
+        renderConversationList();
+      });
+
+      menu.append(renameButton, deleteButton);
+      row.appendChild(menu);
+    }
+
+    conversationList.appendChild(row);
   });
 }
 
@@ -456,13 +651,37 @@ messageInput.addEventListener("input", () => {
 newChatBtn.addEventListener("click", () => {
   if (sending) return;
 
+  const active = getActiveConversation();
+
+  if (active && active.history.length === 0) {
+    activeConversationId = active.id;
+    openConversationMenuId = null;
+    renamingConversationId = null;
+    pendingDeleteConversationId = null;
+    saveConversations();
+    renderAll();
+    messageInput.focus();
+    return;
+  }
+
   const conversation = createConversation();
   conversations.push(conversation);
   activeConversationId = conversation.id;
 
+  openConversationMenuId = null;
+  renamingConversationId = null;
+  pendingDeleteConversationId = null;
+
   saveConversations();
   renderAll();
   messageInput.focus();
+});
+
+chatSearch.addEventListener("input", () => {
+  chatSearchQuery = chatSearch.value;
+  openConversationMenuId = null;
+  pendingDeleteConversationId = null;
+  renderConversationList();
 });
 
 settingsBtn.addEventListener("click", () => {
@@ -479,7 +698,29 @@ themeOptions.forEach(button => {
 
 exportBtn.addEventListener("click", exportData);
 
+document.addEventListener("keydown", event => {
+  if (event.key === "Escape") {
+    openConversationMenuId = null;
+    pendingDeleteConversationId = null;
+
+    if (renamingConversationId) {
+      renamingConversationId = null;
+    }
+
+    renderConversationList();
+  }
+});
+
 document.addEventListener("click", event => {
+  if (
+    openConversationMenuId &&
+    !event.target.closest(".conversation-row")
+  ) {
+    openConversationMenuId = null;
+    pendingDeleteConversationId = null;
+    renderConversationList();
+  }
+
   if (
     !settingsPanel.hidden &&
     !settingsPanel.contains(event.target) &&
