@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#0b0d10">
+  <title>Nelya — V0.1.1</title>
+  <link rel="stylesheet" href="./assets/css/style.css">
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-mark">N</div>
+        <div>
+          <strong>Nelya</strong>
+          <span>V0.1.1</span>
+        </div>
+      </div>
+
+      <button id="newChatBtn" class="sidebar-button">Nouvelle conversation</button>
+
+      <div class="sidebar-section">
+        <p class="sidebar-title">Entraînement</p>
+        <div class="stat-card">
+          <div>
+            <span>Données validées</span>
+            <strong id="validatedCount">0</strong>
+          </div>
+          <div>
+            <span>Objectif initial</span>
+            <strong>500 000</strong>
+          </div>
+        </div>
+      </div>
+
+      <div class="sidebar-footer">
+        <span id="connectionDot" class="status-dot"></span>
+        <span id="connectionText">Mode local</span>
+      </div>
+    </aside>
+
+    <main class="chat-layout">
+      <header class="topbar">
+        <div>
+          <h1>Nelya</h1>
+          <p>Prototype conversationnel — V0.1.1</p>
+        </div>
+        <button id="exportBtn" class="ghost-button">Exporter les données</button>
+      </header>
+
+      <section id="chat" class="chat">
+        <div id="welcome" class="welcome">
+          <div class="welcome-logo">N</div>
+          <h2>Parler avec Nelya</h2>
+          <p>Chaque réponse peut être validée ou corrigée pour préparer les futures données d’entraînement.</p>
+        </div>
+      </section>
+
+      <section class="composer-wrap">
+        <form id="composer" class="composer">
+          <textarea id="messageInput" rows="1" placeholder="Écris un message à Nelya..." autocomplete="off"></textarea>
+          <button id="sendBtn" type="submit">Envoyer</button>
+        </form>
+        <p class="composer-note">Entrée pour envoyer · Maj + Entrée pour revenir à la ligne</p>
+      </section>
+    </main>
+  </div>
+
+  <template id="messageTemplate">
+    <article class="message">
+      <div class="message-avatar"></div>
+      <div class="message-content">
+        <div class="message-meta"></div>
+        <div class="message-text"></div>
+        <div class="message-actions"></div>
+      </div>
+    </article>
+  </template>
+
+  <script src="./js/config.js"></script>
+  <script src="./js/app.js"></script>
+</body>
+</html>
